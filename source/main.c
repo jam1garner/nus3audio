@@ -49,7 +49,7 @@ int main(int argc, char const *argv[])
     }
     if(!filename){
         printf("No filename given.\n\n");
-        printf("Usage:\n----------\nnus3audio [-o (output)] FILE\n");
+        printf("Usage:\n----------\nnus3audio [-o (output folder)] FILE\n");
         return -1;
     }
 
