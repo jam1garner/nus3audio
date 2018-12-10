@@ -25,7 +25,7 @@ Nus3audioFile* parse_file(FILE* file){
     while(!feof(file)){
         SectionHeader temp;
         fread(&temp, sizeof(SectionHeader), 1, file);
-        printf("%.4s\n", temp.magic);
+        //printf("%.4s\n", temp.magic);
         if(!memcmp(&temp, "TNID", 4)){
             trackIdSection = malloc(sizeof(TrackNumberIdSection));
             memcpy(trackIdSection, &temp, sizeof(SectionHeader));
