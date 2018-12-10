@@ -1,5 +1,6 @@
 #include "nus3audio.h"
 #include <string.h>
+#include <stdlib.h>
 
 void writeAllBytes(char* filename, void* bytes, int size){
     FILE* file = fopen(filename, "wb");
@@ -27,11 +28,38 @@ void extract(Nus3audioFile* nus, char* outfolder){
 
 int main(int argc, char const *argv[])
 {
-    if(argc < 2)
+    char* outfolder = "output";
+    char* filename = NULL;
+    for(int i = 1; i < argc; i++){
+        if(strcmp(argv[i], "--help") == 0){
+            printf("Usage:\n----------\nnus3audio [-o (output)] FILE\n");
+            return 0;
+        }
+        else if(strcmp(argv[i], "-o") == 0){
+            outfolder = malloc(strlen(argv[i+1]) + 1); 
+            strcpy(outfolder, argv[i+1]);
+            i++;
+        }
+        else {
+            if(filename == NULL){
+                filename = malloc(strlen(argv[i]) + 1); 
+                strcpy(filename, argv[i]);
+            }
+        }
+    }
+    if(!filename){
+        printf("No filename given.\n\n");
+        printf("Usage:\n----------\nnus3audio [-o (output)] FILE\n");
         return -1;
-    FILE* file = fopen(argv[1], "rb");
+    }
+
+    char command[256];
+    sprintf((char*)&command, "mkdir \"%s\"", outfolder);
+    system(command);
+
+    FILE* file = fopen(filename, "rb");
     Nus3audioFile* nus = parse_file(file);
-    extract(nus, "output");
+    extract(nus, outfolder);
     fclose(file);
 
     return 0;
