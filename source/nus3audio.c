@@ -4,6 +4,10 @@
 #include "nus3audio.h"
 #include "nus3audio_file.h"
 
+void write_file(FILE* file, Nus3audioFile* nus){
+    //uint32_t 
+}
+
 Nus3audioFile* parse_file(FILE* file){
     // Read nus3bank/nus3audio header (just some magic and the filesize)
     SectionHeader* nus3Header = malloc(sizeof(SectionHeader));

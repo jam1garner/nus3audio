@@ -14,5 +14,6 @@ typedef struct Nus3audioFile_t {
     int entryCount;
 } Nus3audioFile;
 
+void write_file(FILE* file, Nus3audioFile* nus);
 Nus3audioFile* parse_file(FILE* file);
 AudioFile* get_audio_file(Nus3audioFile* file, int id);
