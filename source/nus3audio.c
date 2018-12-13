@@ -20,21 +20,21 @@ void write_file(FILE* file, Nus3audioFile* nus){
     uint32_t* tnidSection = malloc(tnidSectionSize);
     memcpy(tnidSection, "TNID", 4);
     tnidSection[1] = (uint32_t)(nus->entryCount * 4);
-    uint32_t* trackIds = tnidSection + 8;
+    uint32_t* trackIds = tnidSection + 2;
 
     // NMOF section setup
     int nmofSectionSize = (nus->entryCount * 4) + 0x8;
     uint32_t* nmofSection = malloc(nmofSectionSize);
     memcpy(nmofSection, "NMOF", 4);
     nmofSection[1] = (uint32_t)(nus->entryCount * 4);
-    uint32_t* nameOffsets = nmofSection + 8;
+    uint32_t* nameOffsets = nmofSection + 2;
 
     // ADOF section setup
     int adofSectionSize = (nus->entryCount * 8) + 0x8;
     uint32_t* adofSection = malloc(adofSectionSize);
     memcpy(adofSection, "ADOF", 4);
     adofSection[1] = (uint32_t)(nus->entryCount * 8);
-    FileEntry* addressOffsets = adofSection + 8;
+    FileEntry* addressOffsets = adofSection + 2;
     
     // First pass + String offset calculations
     int startingPosition = NUS3_HEADER_SIZE + audiindxSectionSize + tnidSectionSize + nmofSectionSize + 
@@ -54,7 +54,7 @@ void write_file(FILE* file, Nus3audioFile* nus){
     uint32_t* tnnmSection = calloc(1, tnnmSectionSize);
     memcpy(tnnmSection, "TNNM", 4);
     tnnmSection[1] = stringSectionSize;
-    char* stringSection = tnnmSection + TNNM_HEADER_SIZE;
+    char* stringSection = tnnmSection + 2;
     currentNode = nus->head;
     char* stringWritePosition = stringSection;
     for(int i = 0; currentNode; i++){
@@ -103,7 +103,7 @@ void write_file(FILE* file, Nus3audioFile* nus){
     packSection[1] = (fileWriteOffset - packStart);
     
     // Write PACK section
-    uint8_t* packBase = packSection + 0x8;
+    uint8_t* packBase = packSection + 2;
     fileWriteOffset = 0;
     currentNode = nus->head;
     for(int i = 0; currentNode; i++){
@@ -208,8 +208,10 @@ Nus3audioFile* parse_file(FILE* file){
     Nus3audioFile* nus3audioFile = malloc(sizeof(Nus3audioFile));
     nus3audioFile->entryCount = trackCount;
     // Convert all the data into a linked list grouped by audio file
-    if(trackCount)
+    if(trackCount){
         nus3audioFile->head = malloc(sizeof(AudioFile));
+        nus3audioFile->head->next = NULL;
+    }
     AudioFile* current;
     for(int i = 0; i < trackCount; i++){
         if(i == 0){
@@ -218,6 +220,7 @@ Nus3audioFile* parse_file(FILE* file){
         else {
             current->next = malloc(sizeof(AudioFile));
             current = current->next;
+            current->next = NULL;
         }
         current->id = trackIdSection->trackNumbers[i];
         // Use pointer arithmatic to point to the string in the bulk read string section
