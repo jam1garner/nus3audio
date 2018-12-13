@@ -4,8 +4,116 @@
 #include "nus3audio.h"
 #include "nus3audio_file.h"
 
+#define NUS3_HEADER_SIZE 8
+#define TNNM_HEADER_SIZE 8
+
 void write_file(FILE* file, Nus3audioFile* nus){
-    //uint32_t 
+    // AUDIINDX section setup
+    int audiindxSectionSize = 0x10;
+    uint32_t* audiindxSection = malloc(audiindxSectionSize);
+    memcpy(audiindxSection, "AUDIINDX", 0x8);
+    audiindxSection[2] = 0x4;
+    audiindxSection[3] = nus->entryCount;
+
+    // TNID section setup
+    int tnidSectionSize = (nus->entryCount * 4) + 0x8;
+    uint32_t* tnidSection = malloc(tnidSectionSize);
+    memcpy(tnidSection, "TNID", 4);
+    tnidSection[1] = (uint32_t)(nus->entryCount * 4);
+    uint32_t* trackIds = tnidSection + 8;
+
+    // NMOF section setup
+    int nmofSectionSize = (nus->entryCount * 4) + 0x8;
+    uint32_t* nmofSection = malloc(nmofSectionSize);
+    memcpy(nmofSection, "NMOF", 4);
+    nmofSection[1] = (uint32_t)(nus->entryCount * 4);
+    uint32_t* nameOffsets = nmofSection + 8;
+
+    // ADOF section setup
+    int adofSectionSize = (nus->entryCount * 8) + 0x8;
+    uint32_t* adofSection = malloc(adofSectionSize);
+    memcpy(adofSection, "ADOF", 4);
+    adofSection[1] = (uint32_t)(nus->entryCount * 8);
+    FileEntry* addressOffsets = adofSection + 8;
+    
+    // First pass + String offset calculations
+    int startingPosition = NUS3_HEADER_SIZE + audiindxSectionSize + tnidSectionSize + nmofSectionSize + 
+                            adofSectionSize + TNNM_HEADER_SIZE;
+    int currentPosition = startingPosition;
+    AudioFile* currentNode = nus->head;
+    for(int i = 0; currentNode; i++){
+        trackIds[i] = currentNode->id;
+        addressOffsets[i].fileSize = currentNode->filesize;
+        nameOffsets[i] = currentPosition;
+        currentPosition += strlen(currentNode->name) + 1;
+        currentNode = currentNode->next;
+    }
+    // Size of the string section rounded to the nearest 0x4 to word allign it
+    int stringSectionSize = ((currentPosition - startingPosition) + 3) & ~0x3;
+    int tnnmSectionSize = TNNM_HEADER_SIZE + stringSectionSize;
+    uint32_t* tnnmSection = calloc(1, tnnmSectionSize);
+    memcpy(tnnmSection, "TNNM", 4);
+    tnnmSection[1] = stringSectionSize;
+    char* stringSection = tnnmSection + TNNM_HEADER_SIZE;
+    currentNode = nus->head;
+    char* stringWritePosition = stringSection;
+    for(int i = 0; currentNode; i++){
+        strcpy(stringWritePosition, currentNode->name);
+        stringWritePosition += strlen(currentNode->name) + 1;
+        currentNode = currentNode->next;
+    }
+
+    // Figure out padding (JUNK section)
+    int junkSectionSize = 0;
+    uint32_t* junkSection = NULL;
+    int filesizeBeforePack = startingPosition + stringSectionSize;
+    if (filesizeBeforePack % 0x10 != 0x8){
+        // Add a JUNK section if the files won't be 0x10 alligned
+        int junkSize;
+        switch((filesizeBeforePack % 0x10) / 4){
+            case 0:
+                junkSize = 0x0;
+                break;
+            case 1:
+                junkSize = 0xC;
+                break;
+            case 3:
+                junkSize = 0x4;
+                break;
+        }
+        junkSectionSize = 0x8 + junkSize;
+        junkSection = calloc(1, junkSectionSize);
+        memcpy(junkSection, "JUNK", 4);
+        junkSection[1] = junkSize;
+    }
+
+    // Make PACK section and populate it
+    int packStart = filesizeBeforePack + junkSectionSize + 0x8;
+    int fileWriteOffset = packStart;
+    currentNode = nus->head;
+    for(int i = 0; currentNode; i++){
+        addressOffsets[i].fileOffset = fileWriteOffset;
+        fileWriteOffset += currentNode->filesize;
+        fileWriteOffset = (fileWriteOffset + 0xF) & ~0xF;
+        currentNode = currentNode->next;
+    }
+    int packSectionSize = (fileWriteOffset - packStart) + 0x8;
+    uint32_t* packSection = calloc(1, packSectionSize);
+    memcpy(packSection, "PACK", 4);
+    packSection[1] = (fileWriteOffset - packStart);
+    
+    // Write PACK section
+    uint8_t* packBase = packSection + 0x8;
+    int fileWriteOffset = packStart;
+    currentNode = nus->head;
+    for(int i = 0; currentNode; i++){
+        memcpy(packBase + fileWriteOffset, currentNode->data, currentNode->filesize);
+        fileWriteOffset += currentNode->filesize;
+        fileWriteOffset = (fileWriteOffset + 0xF) & ~0xF;
+        currentNode = currentNode->next;
+    }
+
+    
 }
 
 Nus3audioFile* parse_file(FILE* file){

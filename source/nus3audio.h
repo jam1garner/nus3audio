@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
+#include "file_entry.h"
 
 typedef struct AudioFile_t {
     uint32_t id;

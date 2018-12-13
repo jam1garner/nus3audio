@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include "file_entry.h"
 
 typedef struct SectionHeader_t {
     char magic[4];
@@ -26,11 +27,6 @@ typedef struct NameOfSection_t {
         uint32_t* nameOffsets;
     };
 } NameOfSection;
-
-typedef struct FileEntry_t {
-    uint32_t fileOffset;
-    uint32_t fileSize;
-} FileEntry;
 
 typedef struct AddressSection_t {
     SectionHeader header;
