@@ -104,7 +104,7 @@ void write_file(FILE* file, Nus3audioFile* nus){
     
     // Write PACK section
     uint8_t* packBase = packSection + 0x8;
-    int fileWriteOffset = packStart;
+    fileWriteOffset = 0;
     currentNode = nus->head;
     for(int i = 0; currentNode; i++){
         memcpy(packBase + fileWriteOffset, currentNode->data, currentNode->filesize);
@@ -113,7 +113,29 @@ void write_file(FILE* file, Nus3audioFile* nus){
         currentNode = currentNode->next;
     }
 
-    
+    SectionHeader* nus3Section = malloc(sizeof(SectionHeader));
+    memcpy(nus3Section->magic, "NUS3", 4);
+    nus3Section->size = fileWriteOffset - NUS3_HEADER_SIZE;
+
+    // Write generated sections to file in the order:
+    // NUS3, AUDIINDX, TNID, NMOF, ADOF, TNNM, JUNK (if applicable), PACK
+    fwrite(nus3Section, sizeof(SectionHeader), 1, file);
+    fwrite(audiindxSection, audiindxSectionSize, 1, file);
+    fwrite(tnidSection, tnidSectionSize, 1, file);
+    fwrite(nmofSection, nmofSectionSize, 1, file);
+    fwrite(adofSection, adofSectionSize, 1, file);
+    fwrite(tnnmSection, tnnmSectionSize, 1, file);
+    if(junkSection)
+        fwrite(junkSection, junkSectionSize, 1, file);
+    fwrite(packSection, packSectionSize, 1, file);
+    free(nus3Section);
+    free(audiindxSection);
+    free(tnidSection);
+    free(nmofSection);
+    free(adofSection);
+    free(tnnmSection);
+    if(junkSection)
+        free(junkSection);
 }
 
 Nus3audioFile* parse_file(FILE* file){

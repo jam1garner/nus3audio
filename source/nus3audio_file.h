@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include "file_entry.h"
 
 typedef struct SectionHeader_t {
     char magic[4];
