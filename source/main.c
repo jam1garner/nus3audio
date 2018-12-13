@@ -1,6 +1,7 @@
 #include "nus3audio.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 void writeAllBytes(char* filename, void* bytes, int size){
     FILE* file = fopen(filename, "wb");
@@ -26,18 +27,43 @@ void extract(Nus3audioFile* nus, char* outfolder){
     }
 }
 
+void printUsage(){
+    printf("Usage:\n----------\nnus3audio [options] FILE\n\n");
+    printf("  -p  --print    |  Prints info about all the files in the nus3audio archive (Default behavior)");
+    printf("  -e  --extract  |  Extract to 'output' folder, unless another folder is provided\n");
+    printf("  -o  --outpath  |  Provide an output folder name for extraction, or output file name for injection\n");
+    printf("                 |  example: nus3audio -e -o mario_audio mario_sfx.nus3audio\n");
+    printf("                 |\n");
+    printf("  -r  --replace  |  Replaces a file in the nus3audio file given an index and a filename\n");
+    printf("                 |  example: nus3audio mario_sfx.nus3audio -r 0 mario_run.lopus -o mario_sfx_mod.nus3audio");
+    printf("                 |\n");
+}
+
 int main(int argc, char const *argv[])
 {
-    char* outfolder = "output";
+    char* outpath = NULL;
+    bool actionPrint = false, actionExtract = false;
     char* filename = NULL;
     for(int i = 1; i < argc; i++){
         if(strcmp(argv[i], "--help") == 0){
-            printf("Usage:\n----------\nnus3audio [-o (output)] FILE\n");
+            printUsage();
             return 0;
         }
+        else if(strcmp(argv[i], "-e") == 0 || strcmp(argv[i], "--extract") == 0){
+            if(!outpath){
+                outpath = "output";
+            }
+            actionExtract = true;
+        }
+        else if(strcmp(argv[i], "-p") == 0 || strcmp(argv[i], "--print") == 0){
+            actionPrint = true;
+        }
+        else if(strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--replace") == 0){
+            // TODO: Collect replacements to be made
+        }
         else if(strcmp(argv[i], "-o") == 0){
-            outfolder = malloc(strlen(argv[i+1]) + 1); 
-            strcpy(outfolder, argv[i+1]);
+            outpath = malloc(strlen(argv[i+1]) + 1); 
+            strcpy(outpath, argv[i+1]);
             i++;
         }
         else {
@@ -48,19 +74,27 @@ int main(int argc, char const *argv[])
         }
     }
     if(!filename){
-        printf("No filename given.\n\n");
-        printf("Usage:\n----------\nnus3audio [-o (output folder)] FILE\n");
+        printUsage();
         return -1;
     }
-
-    char command[256];
-    sprintf((char*)&command, "mkdir \"%s\"", outfolder);
-    system(command);
-
     FILE* file = fopen(filename, "rb");
     Nus3audioFile* nus = parse_file(file);
-    extract(nus, outfolder);
     fclose(file);
+
+    if(actionPrint || !actionExtract){
+        AudioFile* currentNode = nus->head;
+        while(currentNode){
+            printf("%.2i: filesize = %.8X, name = %s\n", currentNode->id, currentNode->filesize, currentNode->name);
+            currentNode = currentNode->next;
+        }
+    }
+    if(actionExtract){
+        char command[256];
+        snprintf((char*)&command, 256, "mkdir \"%s\"", outpath);
+        system(command);
+
+        extract(nus, outpath);
+    }
 
     return 0;
 }
