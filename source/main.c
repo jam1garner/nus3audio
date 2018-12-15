@@ -95,6 +95,11 @@ int main(int argc, char const *argv[])
             fclose(rf);
             i += 2;
         }
+        else if(strcmp(argv[i], "-d") == 0){
+            int indexToRemove = atoi(argv[i+1]);
+            // TODO: Actually make this useful
+            i++;
+        }
         else if(strcmp(argv[i], "-o") == 0){
             outpath = malloc(strlen(argv[i+1]) + 1); 
             strcpy(outpath, argv[i+1]);
