@@ -35,6 +35,7 @@ void printUsage(){
     printf("  -o  --outpath  |  Provide an output folder name for extraction, or output file name for injection\n");
     printf("                 |  example: nus3audio -e -o mario_audio mario_sfx.nus3audio\n");
     printf("                 |\n");
+    printf("  -d  --delete   |  Given a index it removes the audio file from the nus3audio file");
     printf("  -r  --replace  |  Replaces a file in the nus3audio file given an index and a filename\n");
     printf("                 |  example: nus3audio mario_sfx.nus3audio -r 0 mario_run.lopus -o mario_sfx_mod.nus3audio\n");
     printf("                 |\n");
