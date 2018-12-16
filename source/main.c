@@ -50,6 +50,9 @@ int main(int argc, char const *argv[])
     replacementFiles->head = NULL;
     AudioFile* currentReplacementNode = NULL;
     replacementFiles->entryCount = 0;
+    Nus3audioFile* deletedFiles = malloc(sizeof(Nus3audioFile));
+    deletedFiles->head = NULL;
+    AudioFile* currDeleteNode = NULL;
     for(int i = 1; i < argc; i++){
         if(strcmp(argv[i], "--help") == 0){
             printUsage();
@@ -98,7 +101,16 @@ int main(int argc, char const *argv[])
         }
         else if(strcmp(argv[i], "-d") == 0){
             int indexToRemove = atoi(argv[i+1]);
-            // TODO: Actually make this useful
+            if(!deletedFiles->head){
+                deletedFiles->head = malloc(sizeof(AudioFile));
+                currDeleteNode = deletedFiles->head;
+            }
+            else {
+                currDeleteNode->next = malloc(sizeof(AudioFile));
+                currDeleteNode = currDeleteNode->next;
+            }
+            currDeleteNode->next = NULL;
+            currDeleteNode->id = indexToRemove;
             i++;
         }
         else if(strcmp(argv[i], "-o") == 0){
@@ -120,6 +132,25 @@ int main(int argc, char const *argv[])
     FILE* file = fopen(filename, "rb");
     Nus3audioFile* nus = parse_file(file);
     fclose(file);
+
+    currDeleteNode = deletedFiles->head;
+    while(currDeleteNode){
+        AudioFile* currentNode = nus->head;
+        AudioFile* lastNode = NULL;
+        while(currentNode){
+            if(currentNode->id == currDeleteNode->id){
+                if(lastNode == NULL)
+                    nus->head = currentNode->next;
+                else
+                    lastNode->next = currentNode->next;
+                free(currentNode);
+                break;
+            }
+            lastNode = currentNode;
+            currentNode = currentNode->next;
+        }
+        currDeleteNode = currDeleteNode->next;
+    }
 
     // Replacements
     currentReplacementNode = replacementFiles->head;
