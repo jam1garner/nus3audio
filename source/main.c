@@ -43,16 +43,19 @@ void printUsage(){
 
 int main(int argc, char const *argv[])
 {
-    char* outpath = NULL;
+    char *outpath = NULL, *filename = NULL;;
     bool actionPrint = false, actionExtract = false, actionWrite = false;
-    char* filename = NULL;
-    Nus3audioFile* replacementFiles = malloc(sizeof(Nus3audioFile));
+    
+    // Singly linked lists for storing edits to be made
+    Nus3audioFile *replacementFiles = malloc(sizeof(Nus3audioFile)),
+                  *deletedFiles = malloc(sizeof(Nus3audioFile));
+    // Temporary variables
+    AudioFile *currDeleteNode = NULL, *currentReplacementNode = NULL;
     replacementFiles->head = NULL;
-    AudioFile* currentReplacementNode = NULL;
-    replacementFiles->entryCount = 0;
-    Nus3audioFile* deletedFiles = malloc(sizeof(Nus3audioFile));
     deletedFiles->head = NULL;
-    AudioFile* currDeleteNode = NULL;
+    replacementFiles->entryCount = 0;
+
+    // Argument handling
     for(int i = 1; i < argc; i++){
         if(strcmp(argv[i], "--help") == 0){
             printUsage();
@@ -133,6 +136,7 @@ int main(int argc, char const *argv[])
     Nus3audioFile* nus = parse_file(file);
     fclose(file);
 
+    // Apply deletions
     currDeleteNode = deletedFiles->head;
     while(currDeleteNode){
         AudioFile* currentNode = nus->head;
@@ -152,7 +156,7 @@ int main(int argc, char const *argv[])
         currDeleteNode = currDeleteNode->next;
     }
 
-    // Replacements
+    // Apply replacements
     currentReplacementNode = replacementFiles->head;
     while(currentReplacementNode){
         AudioFile* currentNode = nus->head;
