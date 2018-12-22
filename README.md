@@ -9,6 +9,8 @@ Just run `make`, or `make debug`.
 
 ### Usage
 
+Remember to use `-w` when replacing files and `-e` when extracting them. The replace operation alone is not enough to indicate you want to write to file.
+
 ```
 nus3audio [options] FILE
 
