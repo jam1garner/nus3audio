@@ -94,7 +94,10 @@ void write_file(FILE* file, Nus3audioFile* nus){
     for(int i = 0; currentNode; i++){
         addressOffsets[i].fileOffset = fileWriteOffset;
         fileWriteOffset += currentNode->filesize;
-        fileWriteOffset = (fileWriteOffset + 0xF) & ~0xF;
+        // 0x10 allign offset if needed
+        // (No need to allign if it's the last one)
+        if(currentNode->next)
+            fileWriteOffset = (fileWriteOffset + 0xF) & ~0xF;
         currentNode = currentNode->next;
     }
     int packSectionSize = (fileWriteOffset - packStart) + 0x8;
@@ -109,13 +112,15 @@ void write_file(FILE* file, Nus3audioFile* nus){
     for(int i = 0; currentNode; i++){
         memcpy(packBase + fileWriteOffset, currentNode->data, currentNode->filesize);
         fileWriteOffset += currentNode->filesize;
-        fileWriteOffset = (fileWriteOffset + 0xF) & ~0xF;
+        if(currentNode->next)
+            fileWriteOffset = (fileWriteOffset + 0xF) & ~0xF;
         currentNode = currentNode->next;
     }
 
     SectionHeader* nus3Section = malloc(sizeof(SectionHeader));
     memcpy(nus3Section->magic, "NUS3", 4);
-    nus3Section->size = fileWriteOffset - NUS3_HEADER_SIZE;
+    nus3Section->size = audiindxSectionSize + tnidSectionSize + nmofSectionSize +
+                        adofSectionSize + tnnmSectionSize + junkSectionSize + packSectionSize;
 
     // Write generated sections to file in the order:
     // NUS3, AUDIINDX, TNID, NMOF, ADOF, TNNM, JUNK (if applicable), PACK
