@@ -7,7 +7,7 @@
 #define NUS3_HEADER_SIZE 8
 #define TNNM_HEADER_SIZE 8
 
-void write_file(FILE* file, Nus3audioFile* nus){
+void write_file(FILE* file, Nus3audioFile* nus, bool vgms_compatibility){
     // AUDIINDX section setup
     int audiindxSectionSize = 0x10;
     uint32_t* audiindxSection = malloc(audiindxSectionSize);
@@ -67,7 +67,7 @@ void write_file(FILE* file, Nus3audioFile* nus){
     int junkSectionSize = 0;
     uint32_t* junkSection = NULL;
     int filesizeBeforePack = startingPosition + stringSectionSize;
-    if (filesizeBeforePack % 0x10 != 0x8){
+    if (filesizeBeforePack % 0x10 != 0x8 || vgms_compatibility){
         // Add a JUNK section if the files won't be 0x10 alligned
         int junkSize;
         switch((filesizeBeforePack % 0x10) / 4){
@@ -76,6 +76,9 @@ void write_file(FILE* file, Nus3audioFile* nus){
                 break;
             case 1:
                 junkSize = 0xC;
+                break;
+            case 2:
+                junkSize = 0x8;
                 break;
             case 3:
                 junkSize = 0x4;

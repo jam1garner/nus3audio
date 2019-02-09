@@ -38,13 +38,14 @@ void printUsage(){
     printf("  -d  --delete   |  Given a index it removes the audio file from the nus3audio file\n");
     printf("  -r  --replace  |  Replaces a file in the nus3audio file given an index and a filename\n");
     printf("                 |  example: nus3audio mario_sfx.nus3audio -r 0 mario_run.lopus -o mario_sfx_mod.nus3audio\n");
+    printf("  -v  --vgmstream|  Use vgmstream compatibility mode\n");
     printf("                 |\n");
 }
 
 int main(int argc, char const *argv[])
 {
     char *outpath = NULL, *filename = NULL;;
-    bool actionPrint = false, actionExtract = false, actionWrite = false;
+    bool actionPrint = false, actionExtract = false, actionWrite = false, vgms_compatibility = false;
     
     // Singly linked lists for storing edits to be made
     Nus3audioFile *replacementFiles = malloc(sizeof(Nus3audioFile)),
@@ -121,6 +122,9 @@ int main(int argc, char const *argv[])
             strcpy(outpath, argv[i+1]);
             i++;
         }
+        else if(strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--vgmstream") == 0){
+            vgms_compatibility = true;
+        }
         else {
             if(filename == NULL){
                 filename = malloc(strlen(argv[i]) + 1); 
@@ -181,7 +185,7 @@ int main(int argc, char const *argv[])
     
     if(actionWrite){
         FILE* f = fopen(outpath, "wb");
-        write_file(f, nus);
+        write_file(f, nus, vgms_compatibility);
         fclose(f);
     }
     else if(actionExtract){
